@@ -219,7 +219,7 @@ function M.setup(keywords, opts)
 	end
 end
 
-function init()
+local function init()
 	_set_wezterm_require_path(search_path(nil, { "http", "chrisgve", "dev", "wezterm" }))
 	M.bootstrap = false
 	utils = require("utils.utils")
