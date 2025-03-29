@@ -185,13 +185,6 @@ end
 ---@return string|nil hashkey
 ---@return string|nil plugin_path
 function M.setup(keywords, opts)
-	if M.bootstrap then
-		_set_wezterm_require_path(search_path(nil, { "http", "chrisgve", "dev", "wezterm" }))
-		M.bootstrap = false
-	end
-
-	utils = require("utils.utils")
-
 	if keywords == nil or #keywords == 0 then
 		wezterm.log_error("No keywords provided")
 		wezterm.emit("dev.wezterm.no_keywords")
@@ -225,5 +218,13 @@ function M.setup(keywords, opts)
 		return hashkey, nil
 	end
 end
+
+function init()
+	_set_wezterm_require_path(search_path(nil, { "http", "chrisgve", "dev", "wezterm" }))
+	M.bootstrap = false
+	utils = require("utils.utils")
+end
+
+init()
 
 return M
