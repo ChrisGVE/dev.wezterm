@@ -98,6 +98,7 @@ end
 
 ---@param hashkey string|nil
 ---@param opts dev_opts
+---@return string|nil plugin_path
 ---@return string|nil require_path
 local function search_path(hashkey, opts)
 	local cache_element = nil
@@ -142,7 +143,7 @@ local function search_path(hashkey, opts)
 				end
 				cache_element.require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
 				if M.bootstrap or opts and opts.auto then
-					return cache_element.require_path
+					return cache_element.plugin_path, cache_element.require_path
 				else
 					cache_element.plugin_path = plugin.plugin_dir
 					return
@@ -210,9 +211,11 @@ function M.setup(opts)
 
 	local hashkey = utils.array_hash(opts.keywords)
 	M.cache[hashkey] = opts
-	local require_path = search_path(hashkey, opts)
+	local plugin_path, require_path = search_path(hashkey, opts)
+	wezterm.log_info("Plugin: " .. plugin_path .. " Require: " .. require_path)
 
 	if opts and opts.auto then
+		print(require_path)
 		_set_wezterm_require_path(require_path)
 		return nil, plugin_path
 	else
