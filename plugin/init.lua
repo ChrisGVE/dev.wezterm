@@ -138,11 +138,11 @@ local function search_path(cache_element)
 				return
 			end
 		end
-		wezterm.log_error("dev.wezterm: Could not find plugin directory")
-		wezterm.emit("dev.wezterm.dir_not_found")
-		if cache_element then
-			cache_element.error = true
-		end
+	end
+	wezterm.log_error("dev.wezterm: Could not find plugin directory")
+	wezterm.emit("dev.wezterm.dir_not_found")
+	if cache_element then
+		cache_element.error = true
 	end
 end
 
@@ -219,13 +219,13 @@ function M.setup(opts)
 end
 
 local function init()
-	---@type dev_opts
-	local opts = {
-		keywords = { "http", "chrisgve", "dev", "wezterm" },
+	---@type CacheElement
+	local cache_element = {
+		keywords = { "https", "chrisgve", "dev", "wezterm" },
 		fetch_branch = true,
 		ignore_branch = { "main" },
 	}
-	_set_wezterm_require_path(search_path(opts))
+	_set_wezterm_require_path(search_path(cache_element))
 	M.bootstrap = false
 	utils = require("utils.utils")
 end
