@@ -18,10 +18,28 @@ local default_element = {
 	fetch_branch = false,
 	branch = nil,
 	auto = true,
+	ignore_branch = { "main", "master" },
 }
 
 ---@type Cache
 M.cache = {}
+
+-- check if `str` is included in `array`
+---@param str string
+---@param array string|string[]
+---@return boolean
+function string.is_in(str, array)
+	if type(array) == "string" and str == array then
+		return true
+	elseif type(array) == "table" then
+		for _, v in ipairs(array) do
+			if v == str then
+				return true
+			end
+		end
+	end
+	return false
+end
 
 ---@param path string
 ---@param branch string
@@ -78,57 +96,55 @@ local function get_cache_element_from_hash(hashkey)
 	end
 end
 
----@param hashkey? string
----@param keywords? string[]
----@param opts? dev_opts
+---@param hashkey string|nil
+---@param opts dev_opts
 ---@return string|nil require_path
-local function search_path(hashkey, keywords, opts)
-	local kwds = {}
-	local branch = ""
-	local plugin_path = ""
-	local require_path = ""
-	local fetch_branch_flg = false
+local function search_path(hashkey, opts)
 	local cache_element = nil
-	if M.bootstrap and keywords then
-		kwds = keywords
-		fetch_branch_flg = true -- when in bootstrap mode always look for the branch version if there is one
-	elseif keywords and hashkey == nil then
-		kwds = keywords
-		if opts and opts.fetch_branch then
-			fetch_branch_flg = true
+	if M.bootstrap then
+		local keywords = opts.keywords
+		if keywords and type(keywords) == "string" then
+			opts.keywords = { keywords }
 		end
-	elseif hashkey then
+		cache_element = opts
+	elseif hashkey and not opts.auto then
 		cache_element = get_cache_element_from_hash(hashkey)
 		if cache_element == nil then
 			return
 		end
-		kwds = cache_element.keywords
-		fetch_branch_flg = cache_element.fetch_branch
+	else
+		cache_element = utils.deepcopy(default_element)
 	end
-	if kwds then
+	if cache_element.keywords then
 		-- iterate through every installed plugin
 		for _, plugin in ipairs(wezterm.plugin.list()) do
 			local found = true
 			-- Check the presence of every keywords
-			for _, keyword in ipairs(kwds) do
+			for _, keyword in ipairs(cache_element.keywords) do
 				found = found and plugin.component:find(keyword) ~= nil
 			end
 			if found then
-				plugin_path = plugin.plugin_dir
-				branch = plugin.plugin_dir:match("#(.*)$")
-				if branch and fetch_branch_flg then
-					local success, err = fetch_branch(plugin_path, branch)
+				cache_element.plugin_path = plugin.plugin_dir
+				cache_element.branch = plugin.plugin_dir:match("#(.*)$")
+				if
+					cache_element.branch
+					and cache_element.fetch_branch
+					and (
+						cache_element.ignore_branch and not cache_element.branch:is_in(cache_element.ignore_branch)
+						or true
+					)
+				then
+					local success, err = fetch_branch(cache_element.plugin_path, cache_element.branch)
 					if not success then
 						wezterm.log_error("dev.wezterm: ", err)
 						wezterm.emit("dev.wezterm.error_fetching_branch", err)
 					end
 				end
-				require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
+				cache_element.require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
 				if M.bootstrap or opts and opts.auto then
-					return require_path
+					return cache_element.require_path
 				else
 					cache_element.plugin_path = plugin.plugin_dir
-					cache_element.require_path = require_path
 					return
 				end
 			end
@@ -180,47 +196,38 @@ function M.set_wezterm_require_path(hashkey)
 	end
 end
 
----@param keywords string[]|string
----@param opts? table
+---@param opts dev_opts
 ---@return string|nil hashkey
 ---@return string|nil plugin_path
-function M.setup(keywords, opts)
-	if keywords == nil or #keywords == 0 then
+function M.setup(opts)
+	if opts.keywords == nil or #opts.keywords == 0 then
 		wezterm.log_error("No keywords provided")
 		wezterm.emit("dev.wezterm.no_keywords")
 		return nil, nil
 	end
 
-	---@type string[]
-	local keywords_table
-	if type(keywords) == "string" then
-		keywords_table = { keywords }
-	else
-		keywords_table = keywords
-	end
+	opts = utils.tbl_deep_extend("force", default_element, opts or {})
 
-	local hashkey = utils.array_hash(keywords_table)
-	local plugin_path, require_path = search_path(hashkey, keywords_table, opts)
+	local hashkey = utils.array_hash(opts.keywords)
+	M.cache[hashkey] = opts
+	local plugin_path, require_path = search_path(hashkey, opts)
 
 	if opts and opts.auto then
 		_set_wezterm_require_path(require_path)
 		return nil, plugin_path
 	else
-		M.cache[hashkey] = utils.deepcopy(default_element)
-		local cache_element = M.cache[hashkey]
-		cache_element.keywords = keywords_table
-		cache_element.auto = false
-		if opts then
-			cache_element.fetch_branch = opts.fetch_branch or false
-		end
-		cache_element.plugin_path = plugin_path
-		cache_element.require_path = require_path
 		return hashkey, nil
 	end
 end
 
 local function init()
-	_set_wezterm_require_path(search_path(nil, { "http", "chrisgve", "dev", "wezterm" }))
+	---@type dev_opts
+	local opts = {
+		keywords = { "http", "chrisgve", "dev", "wezterm" },
+		fetch_branch = true,
+		ignore_branch = { "main" },
+	}
+	_set_wezterm_require_path(search_path(nil, opts))
 	M.bootstrap = false
 	utils = require("utils.utils")
 end
