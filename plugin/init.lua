@@ -214,7 +214,6 @@ function M.setup(opts)
 	local hashkey = utils.array_hash(opts.keywords)
 	M.cache[hashkey] = opts
 	local plugin_path, require_path = search_path(hashkey, opts)
-	wezterm.log_info("Plugin: " .. plugin_path .. " Require: " .. require_path)
 
 	if opts and opts.auto then
 		print(require_path)
