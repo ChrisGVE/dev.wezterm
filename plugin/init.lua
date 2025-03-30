@@ -203,6 +203,8 @@ end
 ---@return string|nil hashkey
 ---@return string|nil plugin_path
 function M.setup(opts)
+	print("Input:", opts)
+
 	if opts.keywords == nil or #opts.keywords == 0 then
 		wezterm.log_error("No keywords provided")
 		wezterm.emit("dev.wezterm.no_keywords")
@@ -210,6 +212,8 @@ function M.setup(opts)
 	end
 
 	opts = utils.tbl_deep_extend("force", default_element, opts or {})
+
+	print("Extended: ", opts)
 
 	local hashkey = utils.array_hash(opts.keywords)
 	M.cache[hashkey] = opts
