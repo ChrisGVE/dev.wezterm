@@ -132,7 +132,7 @@ local function search_path(cache_element)
 			cache_element.require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
 			if M.bootstrap then
 				return cache_element.require_path
-			elseif opts.auto then
+			elseif cache_element.auto then
 				return cache_element.plugin_path, cache_element.require_path
 			else
 				return
