@@ -37,3 +37,5 @@ function M.deepcopy(original)
 	end
 	return copy
 end
+
+return M

@@ -199,7 +199,6 @@ function M.setup(keywords, opts)
 		keywords_table = keywords
 	end
 
-	print(keywords_table)
 	local hashkey = utils.array_hash(keywords_table)
 	local plugin_path, require_path = search_path(hashkey, keywords_table, opts)
 
@@ -224,7 +223,6 @@ local function init()
 	_set_wezterm_require_path(search_path(nil, { "http", "chrisgve", "dev", "wezterm" }))
 	M.bootstrap = false
 	utils = require("utils.utils")
-	print(utils)
 end
 
 init()
