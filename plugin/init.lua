@@ -142,10 +142,9 @@ local function search_path(hashkey, opts)
 					end
 				end
 				cache_element.require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
-				if M.bootstrap  then
-				  return cache_element.require_path
-				end
-        elseif opts and opts.auto then
+				if M.bootstrap then
+					return cache_element.require_path
+				elseif opts and opts.auto then
 					return cache_element.plugin_path, cache_element.require_path
 				else
 					cache_element.plugin_path = plugin.plugin_dir
