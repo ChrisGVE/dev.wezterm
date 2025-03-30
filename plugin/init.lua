@@ -225,7 +225,7 @@ local function init()
 		fetch_branch = true,
 		ignore_branch = { "main" },
 	}
-	_set_wezterm_require_path(search_path(nil, opts))
+	_set_wezterm_require_path(search_path(opts))
 	M.bootstrap = false
 	utils = require("utils.utils")
 end
