@@ -96,60 +96,46 @@ local function get_cache_element_from_hash(hashkey)
 	end
 end
 
----@param hashkey string|nil
----@param opts dev_opts
+---@param cache_element CacheElement
 ---@return string|nil plugin_path
 ---@return string|nil require_path
-local function search_path(hashkey, opts)
-	local cache_element = nil
-	if M.bootstrap then
-		local keywords = opts.keywords
-		if keywords and type(keywords) == "string" then
-			opts.keywords = { keywords }
-		end
-		cache_element = opts
-	elseif hashkey and not opts.auto then
-		cache_element = get_cache_element_from_hash(hashkey)
-		if cache_element == nil then
-			return
-		end
-	else
-		cache_element = utils.deepcopy(default_element)
+local function search_path(cache_element)
+	local keywords = cache_element.keywords
+	if keywords and type(keywords) == "string" then
+		cache_element.keywords = { keywords }
 	end
-	if cache_element.keywords then
-		-- iterate through every installed plugin
-		for _, plugin in ipairs(wezterm.plugin.list()) do
-			local found = true
-			-- Check the presence of every keywords
-			for _, keyword in ipairs(cache_element.keywords) do
-				found = found and plugin.component:find(keyword) ~= nil
+	-- iterate through every installed plugin
+	for _, plugin in ipairs(wezterm.plugin.list()) do
+		local found = true
+		-- Check the presence of every keywords
+		for _, keyword in ipairs(cache_element.keywords) do
+			found = found and plugin.component:find(keyword) ~= nil
+		end
+		if found then
+			cache_element.plugin_path = plugin.plugin_dir
+			cache_element.branch = plugin.plugin_dir:match("#(.*)$")
+			if
+				cache_element.branch
+				and cache_element.fetch_branch
+				and (
+					cache_element.ignore_branch and not cache_element.branch:is_in(cache_element.ignore_branch)
+					or true
+				)
+			then
+				local success, err = fetch_branch(cache_element.plugin_path, cache_element.branch)
+				if not success then
+					wezterm.log_error("dev.wezterm: ", err)
+					wezterm.emit("dev.wezterm.error_fetching_branch", err)
+				end
 			end
-			if found then
-				cache_element.plugin_path = plugin.plugin_dir
-				cache_element.branch = plugin.plugin_dir:match("#(.*)$")
-				if
-					cache_element.branch
-					and cache_element.fetch_branch
-					and (
-						cache_element.ignore_branch and not cache_element.branch:is_in(cache_element.ignore_branch)
-						or true
-					)
-				then
-					local success, err = fetch_branch(cache_element.plugin_path, cache_element.branch)
-					if not success then
-						wezterm.log_error("dev.wezterm: ", err)
-						wezterm.emit("dev.wezterm.error_fetching_branch", err)
-					end
-				end
-				cache_element.require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
-				if M.bootstrap then
-					return cache_element.require_path
-				elseif opts and opts.auto then
-					return cache_element.plugin_path, cache_element.require_path
-				else
-					cache_element.plugin_path = plugin.plugin_dir
-					return
-				end
+			cache_element.plugin_path = plugin.plugin_dir
+			cache_element.require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
+			if M.bootstrap then
+				return cache_element.require_path
+			elseif opts.auto then
+				return cache_element.plugin_path, cache_element.require_path
+			else
+				return
 			end
 		end
 		wezterm.log_error("dev.wezterm: Could not find plugin directory")
@@ -163,7 +149,7 @@ end
 ---@param hashkey string
 ---@return string|nil plugin_path
 function M.get_plugin_path(hashkey)
-	local cache_element = M.cache[hashkey]
+	local cache_element = get_cache_element_from_hash(hashkey)
 	if cache_element == nil or cache_element and cache_element.error then
 		return nil
 	else
@@ -174,7 +160,7 @@ end
 ---@param hashkey string
 ---@return string|nil require_path
 function M.get_require_path(hashkey)
-	local cache_element = M.cache[hashkey]
+	local cache_element = get_cache_element_from_hash(hashkey)
 	if cache_element == nil or cache_element and cache_element.error then
 		return nil
 	else
@@ -191,7 +177,7 @@ end
 ---@param hashkey string
 function M.set_wezterm_require_path(hashkey)
 	local cache_element = get_cache_element_from_hash(hashkey)
-	if cache_element and cache_element.require_path then
+	if cache_element and cache_element.require_path and not cache_element.error then
 		_set_wezterm_require_path(cache_element.require_path)
 		return
 	else
@@ -206,7 +192,7 @@ function M.setup(opts)
 	if opts.keywords == nil or #opts.keywords == 0 then
 		wezterm.log_error("No keywords provided")
 		wezterm.emit("dev.wezterm.no_keywords")
-		return nil, nil
+		return
 	end
 
 	opts = utils.tbl_deep_extend("force", default_element, opts or {})
@@ -216,11 +202,11 @@ function M.setup(opts)
 	local require_path
 
 	if opts.auto then
-		plugin_path, require_path = search_path(nil, opts)
+		plugin_path, require_path = search_path(opts)
 	else
 		hashkey = utils.array_hash(opts.keywords)
 		M.cache[hashkey] = opts
-		plugin_path, require_path = search_path(hashkey, opts)
+		plugin_path, require_path = search_path(opts)
 	end
 
 	if opts.auto then
