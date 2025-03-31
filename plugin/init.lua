@@ -24,6 +24,20 @@ local default_element = {
 ---@type Cache
 M.cache = {}
 
+-- Centralized error handler for consistent error management
+---@param error_type string
+---@param message string
+---@param should_throw boolean
+---@return nil
+local function handle_error(error_type, message, should_throw)
+    wezterm.log_error("dev.wezterm: " .. message)
+    wezterm.emit("dev.wezterm." .. error_type, message)
+    if should_throw then
+        error(message)
+    end
+    return nil
+end
+
 -- check if `str` is included in `array`
 ---@param str string
 ---@param array string|string[]
@@ -44,7 +58,8 @@ end
 ---@param path string
 ---@param branch string
 ---@return boolean success
----@return string|nil error
+---@return string|nil error_type
+---@return string|nil error_message
 local function fetch_branch(path, branch)
 	-- Function to run git commands with proper path
 	local function runGit(...)
@@ -81,7 +96,21 @@ local function fetch_branch(path, branch)
 		end
 	end)
 
-	return success, err
+	if not success then
+		local error_type = "branch_fetch_failed"
+		if err:find("does not exist") then
+			error_type = "branch_not_found"
+		elseif err:find("fetch") then
+			error_type = "fetch_failed"
+		elseif err:find("checkout") then
+			error_type = "checkout_failed"
+		elseif err:find("pull") then
+			error_type = "pull_failed"
+		end
+		return false, error_type, err
+	end
+
+	return true
 end
 
 ---@param hashkey string
@@ -90,9 +119,7 @@ local function get_cache_element_from_hash(hashkey)
 	if hashkey and M.cache[hashkey] then
 		return M.cache[hashkey]
 	else
-		wezterm.log_error("dev.wezterm: invalid hashkey:" .. (hashkey or "nil"))
-		wezterm.emit("dev.wezterm.invalid_hashkey")
-		return nil
+		return handle_error("invalid_hashkey", "Invalid hashkey: " .. (hashkey or "nil"), false)
 	end
 end
 
@@ -122,10 +149,9 @@ local function search_path(cache_element)
 					or true
 				)
 			then
-				local success, err = fetch_branch(cache_element.plugin_path, cache_element.branch)
+				local success, error_type, error_message = fetch_branch(cache_element.plugin_path, cache_element.branch)
 				if not success then
-					wezterm.log_error("dev.wezterm: ", err)
-					wezterm.emit("dev.wezterm.error_fetching_branch", err)
+					handle_error(error_type, "Error fetching branch: " .. error_message, false)
 				end
 			end
 			cache_element.plugin_path = plugin.plugin_dir
@@ -139,8 +165,7 @@ local function search_path(cache_element)
 			end
 		end
 	end
-	wezterm.log_error("dev.wezterm: Could not find plugin directory")
-	wezterm.emit("dev.wezterm.dir_not_found")
+	handle_error("plugin_not_found", "Could not find plugin directory", false)
 	if cache_element then
 		cache_element.error = true
 	end
@@ -181,7 +206,7 @@ function M.set_wezterm_require_path(hashkey)
 		_set_wezterm_require_path(cache_element.require_path)
 		return
 	else
-		wezterm.emit("dev.wezterm.require_path_not_set", "Invalid path")
+		handle_error("require_path_not_set", "Invalid path", false)
 	end
 end
 
@@ -189,10 +214,12 @@ end
 ---@return string|nil hashkey
 ---@return string|nil plugin_path
 function M.setup(opts)
-	if opts.keywords == nil or #opts.keywords == 0 then
-		wezterm.log_error("No keywords provided")
-		wezterm.emit("dev.wezterm.no_keywords")
-		return
+	if not opts then
+		return handle_error("invalid_opts", "Options table is required", false)
+	end
+	
+	if not opts.keywords or (type(opts.keywords) == "table" and #opts.keywords == 0) then
+		return handle_error("no_keywords", "No keywords provided", false)
 	end
 
 	opts = utils.tbl_deep_extend("force", default_element, opts or {})
@@ -210,8 +237,9 @@ function M.setup(opts)
 	end
 
 	if opts.auto then
-		print(require_path)
-		_set_wezterm_require_path(require_path)
+		if require_path then
+			_set_wezterm_require_path(require_path)
+		end
 		return plugin_path
 	else
 		return hashkey
