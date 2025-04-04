@@ -28,14 +28,12 @@ M.cache = {}
 ---@param error_type string
 ---@param message string
 ---@param should_throw boolean
----@return nil
 local function handle_error(error_type, message, should_throw)
-    wezterm.log_error("dev.wezterm: " .. message)
-    wezterm.emit("dev.wezterm." .. error_type, message)
-    if should_throw then
-        error(message)
-    end
-    return nil
+	wezterm.log_error("dev.wezterm: " .. message)
+	wezterm.emit("dev.wezterm." .. error_type, message)
+	if should_throw then
+		error(message)
+	end
 end
 
 -- check if `str` is included in `array`
@@ -98,7 +96,9 @@ local function fetch_branch(path, branch)
 
 	if not success then
 		local error_type = "branch_fetch_failed"
-		if err:find("does not exist") then
+		if err == nil then
+			error_type = "unknown error"
+		elseif err:find("does not exist") then
 			error_type = "branch_not_found"
 		elseif err:find("fetch") then
 			error_type = "fetch_failed"
@@ -151,7 +151,7 @@ local function search_path(cache_element)
 			then
 				local success, error_type, error_message = fetch_branch(cache_element.plugin_path, cache_element.branch)
 				if not success then
-					handle_error(error_type, "Error fetching branch: " .. error_message, false)
+					handle_error(error_type or "", "Error fetching branch: " .. (error_message or ""), false)
 				end
 			end
 			cache_element.plugin_path = plugin.plugin_dir
@@ -217,7 +217,7 @@ function M.setup(opts)
 	if not opts then
 		return handle_error("invalid_opts", "Options table is required", false)
 	end
-	
+
 	if not opts.keywords or (type(opts.keywords) == "table" and #opts.keywords == 0) then
 		return handle_error("no_keywords", "No keywords provided", false)
 	end
