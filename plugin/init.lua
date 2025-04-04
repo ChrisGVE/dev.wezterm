@@ -41,11 +41,11 @@ end
 ---@param array string|string[]
 ---@return boolean
 function string.is_in(str, array)
-	if type(array) == "string" and str == array then
+	if type(array) == "string" and str:lower() == array:lower() then
 		return true
 	elseif type(array) == "table" then
 		for _, v in ipairs(array) do
-			if v == str then
+			if v:lower() == str:lower() then
 				return true
 			end
 		end
