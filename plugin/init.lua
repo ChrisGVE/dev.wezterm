@@ -141,6 +141,7 @@ local function search_path(cache_element)
 		if found then
 			cache_element.plugin_path = plugin.plugin_dir
 			cache_element.branch = plugin.plugin_dir:match("#(.*)$")
+			wezterm.log_info("Branch", cache_element.branch)
 			if
 				cache_element.branch
 				and cache_element.fetch_branch
@@ -149,6 +150,7 @@ local function search_path(cache_element)
 					or true
 				)
 			then
+				wezterm.log_info("Fetching the branch")
 				local success, error_type, error_message = fetch_branch(cache_element.plugin_path, cache_element.branch)
 				if not success then
 					handle_error(error_type or "", "Error fetching branch: " .. (error_message or ""), false)
