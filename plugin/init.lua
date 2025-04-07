@@ -213,17 +213,7 @@ end
 ---@param opts dev_opts
 ---@return string|nil hashkey
 ---@return string|nil plugin_path
-function M.setup(opts)
-	if not opts then
-		return handle_error("invalid_opts", "Options table is required", false)
-	end
-
-	if not opts.keywords or (type(opts.keywords) == "table" and #opts.keywords == 0) then
-		return handle_error("no_keywords", "No keywords provided", false)
-	end
-
-	opts = utils.tbl_deep_extend("force", default_element, opts or {})
-
+local function _setup(opts)
 	local hashkey
 	local plugin_path
 	local require_path
@@ -244,6 +234,35 @@ function M.setup(opts)
 	else
 		return hashkey
 	end
+end
+
+---@param url string
+---@param opts dev_opts
+---@return any?
+function M.require(url, opts)
+	local plugin = wezterm.plugin.require(url)
+	if plugin == nil then
+		return nil
+	end
+	opts = utils.tbl_deep_extend("force", default_element, opts or {})
+	return plugin, _setup(opts)
+end
+
+---@param opts dev_opts
+---@return string|nil hashkey
+---@return string|nil plugin_path
+function M.setup(opts)
+	if not opts then
+		return handle_error("invalid_opts", "Options table is required", false)
+	end
+
+	if not opts.keywords or (type(opts.keywords) == "table" and #opts.keywords == 0) then
+		return handle_error("no_keywords", "No keywords provided", false)
+	end
+
+	opts = utils.tbl_deep_extend("force", default_element, opts or {})
+
+	return _setup(opts)
 end
 
 local function init()
