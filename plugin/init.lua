@@ -141,7 +141,7 @@ local function search_path(cache_element)
 		if found then
 			cache_element.plugin_path = plugin.plugin_dir
 			cache_element.branch = plugin.plugin_dir:match("#(.*)$")
-			wezterm.log_info("Branch", cache_element.branch)
+			wezterm.log_info("Branch", plugin.plugin_dir, cache_element, cache_element.branch)
 			if
 				cache_element.branch
 				and cache_element.fetch_branch
