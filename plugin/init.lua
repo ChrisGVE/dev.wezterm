@@ -271,7 +271,7 @@ local function init()
 	---@type CacheElement
 	local cache_element = {
 		keywords = { "https", "chrisgve", "dev", "wezterm" },
-		fetch_branch = true,
+		fetch_branch = false,
 		ignore_branch = { "main" },
 	}
 	_set_wezterm_require_path(search_path(cache_element))
