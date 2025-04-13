@@ -74,7 +74,10 @@ local function search_path(cache_element)
 	-- iterate through every installed plugin
 	for _, plugin in ipairs(wezterm.plugin.list()) do
 		local found = true
-		local decoded_component = utils.decode_wezterm_dir(plugin.component)
+		local decoded_component = ""
+		if utils then
+			decoded_component = utils.decode_wezterm_dir(plugin.component)
+		end
 		-- Check the presence of every keywords
 		for _, keyword in ipairs(cache_element.keywords) do
 			found = found and (decoded_component:find(keyword) ~= nil or plugin.component:find(keyword) ~= nil)
