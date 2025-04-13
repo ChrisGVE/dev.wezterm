@@ -53,66 +53,6 @@ function string.is_in(str, array)
 	return false
 end
 
----@param path string
----@param branch string
----@return boolean success
----@return string|nil error_type
----@return string|nil error_message
-local function fetch_branch(path, branch)
-	-- Function to run git commands with proper path
-	local function runGit(...)
-		local cmd = string.format("cd %q && git %s", path, table.concat({ ... }, " "))
-		local handle = assert(io.popen(cmd .. " 2>&1"))
-		local output = assert(handle:read("*a"))
-		local _, _, code = assert(handle:close())
-
-		if code ~= 0 then
-			error(output)
-		end
-		return output
-	end
-
-	local success, err = pcall(function()
-		-- Check if branch exists in remote
-		local output = runGit("ls-remote", "--heads", "origin", branch)
-		if output == "" then
-			error("Remote branch '" .. branch .. "' does not exist")
-		end
-
-		-- Fetch the latest changes
-		runGit("fetch", "origin", branch)
-
-		-- Check current branch
-		local currentBranch = runGit("rev-parse", "--abbrev-ref", "HEAD"):match("^(.-)%s*$")
-
-		if currentBranch ~= branch then
-			-- Checkout the branch
-			runGit("checkout", branch)
-		else
-			-- Pull updates if we're already on the branch
-			runGit("pull", "origin", branch)
-		end
-	end)
-
-	if not success then
-		local error_type = "branch_fetch_failed"
-		if err == nil then
-			error_type = "unknown error"
-		elseif err:find("does not exist") then
-			error_type = "branch_not_found"
-		elseif err:find("fetch") then
-			error_type = "fetch_failed"
-		elseif err:find("checkout") then
-			error_type = "checkout_failed"
-		elseif err:find("pull") then
-			error_type = "pull_failed"
-		end
-		return false, error_type, err
-	end
-
-	return true
-end
-
 ---@param hashkey string
 ---@return CacheElement|nil
 local function get_cache_element_from_hash(hashkey)
@@ -134,28 +74,12 @@ local function search_path(cache_element)
 	-- iterate through every installed plugin
 	for _, plugin in ipairs(wezterm.plugin.list()) do
 		local found = true
+		local decoded_component = utils.decode_wezterm_dir(plugin.component)
 		-- Check the presence of every keywords
 		for _, keyword in ipairs(cache_element.keywords) do
-			found = found and plugin.component:find(keyword) ~= nil
+			found = found and (decoded_component:find(keyword) ~= nil or plugin.component:find(keyword) ~= nil)
 		end
 		if found then
-			cache_element.plugin_path = plugin.plugin_dir
-			cache_element.branch = cache_element.plugin_path:match("#(.*)$")
-			wezterm.log_info("Branch", plugin.plugin_dir, cache_element, cache_element.branch)
-			if
-				cache_element.branch
-				and cache_element.fetch_branch
-				and (
-					cache_element.ignore_branch and not cache_element.branch:is_in(cache_element.ignore_branch)
-					or true
-				)
-			then
-				wezterm.log_info("Fetching the branch")
-				local success, error_type, error_message = fetch_branch(cache_element.plugin_path, cache_element.branch)
-				if not success then
-					handle_error(error_type or "", "Error fetching branch: " .. (error_message or ""), false)
-				end
-			end
 			cache_element.plugin_path = plugin.plugin_dir
 			cache_element.require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
 			if M.bootstrap then
