@@ -5,7 +5,7 @@ local M = {}
 local is_windows = wezterm.target_triple:find("windows")
 local separator = is_windows and "\\" or "/"
 
-local utils = {}
+local utils = nil
 
 M.bootstrap = true
 
