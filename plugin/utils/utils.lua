@@ -7,11 +7,23 @@ local M = {}
 ---@return string hashkey
 function M.hash(str)
 	local hashkey = 5381
-	for i = 1, #str do
+	for i = 2, #str do
 		hashkey = ((hashkey << 5) + hashkey) + string.byte(str, i)
 		hashkey = hashkey & 0xFFFFFFFF
 	end
 	return string.format("%08x", hashkey)
+end
+
+-- Wezterm module name decoder
+---@param encoded string
+---@return string
+function M.decode_wezterm_dir(encoded)
+	local result = encoded:gsub("sZs", "/"):gsub("sCs", ":"):gsub("sDs", ".")
+	-- Handle u-encoding for other characters if needed
+	result = result:gsub("u(%d+)", function(n)
+		return utf8.char(n)
+	end)
+	return result
 end
 
 -- generate a hash from an array
