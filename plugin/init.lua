@@ -84,10 +84,14 @@ local function search_path(cache_element)
 	if M.substitutions then
 		local substituted_keywords = {}
 		for _, keyword in ipairs(cache_element.keywords) do
-      local kwd = M.substitutions[keyword]
-      if kwd then table.insert(substituted_keywords,kwd) else table.insert(substituted_keywords,keyword)
+			local kwd = M.substitutions[keyword]
+			if kwd then
+				table.insert(substituted_keywords, kwd)
+			else
+				table.insert(substituted_keywords, keyword)
+			end
+			cache_element.keywords = substituted_keywords
 		end
-		cache_element.keywords = substituted_keywords
 	end
 	-- iterate through every installed plugin
 	for _, plugin in ipairs(wezterm.plugin.list()) do
