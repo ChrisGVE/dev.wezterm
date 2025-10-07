@@ -7,7 +7,10 @@ local separator = is_windows and "\\" or "/"
 
 local utils = {}
 
+M.substitutions = nil
+
 M.bootstrap = true
+M.utils = false
 
 ---@type CacheElement
 local default_element = {
@@ -19,6 +22,13 @@ local default_element = {
 	branch = nil,
 	auto = true,
 	ignore_branch = { "main", "master" },
+}
+
+---@type CacheElement
+local dev_cache_element = {
+	keywords = { "https", "chrisgve", "dev", "wezterm" },
+	fetch_branch = true,
+	ignore_branch = { "main" },
 }
 
 ---@type Cache
@@ -127,9 +137,13 @@ end
 ---@return string|nil plugin_path
 ---@return string|nil require_path
 local function search_path(cache_element)
-	local keywords = cache_element.keywords
-	if keywords and type(keywords) == "string" then
-		cache_element.keywords = { keywords }
+	cache_element.keywords = type(cache_element.keywords) == table and cache_element.keywords
+		or { cache_element.keywords }
+	if M.substitutions then
+		local substituted_keywords = {}
+		for _, keyword in ipairs(cache_element.keywords) do
+			table.insert(substituted_keywords, M.substitutions[keyword] or keyword)
+		end
 	end
 	-- iterate through every installed plugin
 	for _, plugin in ipairs(wezterm.plugin.list()) do
@@ -267,16 +281,26 @@ function M.setup(opts)
 	return _setup(opts)
 end
 
+---@param substitute_string substitute[]
+function M.set_substitutions(substitute_string)
+	M.substitutions = substitute_string
+	if not M.utils then
+		local require_path = search_path(dev_cache_element)
+		_set_wezterm_require_path(require_path)
+		M.bootstrap = false
+		utils = require("utils.utils")
+		M.utils = true
+	end
+end
+
 local function init()
-	---@type CacheElement
-	local cache_element = {
-		keywords = { "https", "chrisgve", "dev", "wezterm" },
-		fetch_branch = true,
-		ignore_branch = { "main" },
-	}
-	_set_wezterm_require_path(search_path(cache_element))
-	M.bootstrap = false
-	utils = require("utils.utils")
+	local require_path = search_path(dev_cache_element)
+	if require_path then
+		_set_wezterm_require_path(require_path)
+		M.bootstrap = false
+		utils = require("utils.utils")
+		M.utils = true
+	end
 end
 
 init()
