@@ -77,12 +77,15 @@ end
 ---@return string|nil plugin_path
 ---@return string|nil require_path
 local function search_path(cache_element)
-	cache_element.keywords = type(cache_element.keywords) == table and cache_element.keywords
-		or { cache_element.keywords }
+	local keywords = cache_element.keywords
+	if keywords and type(keywords) == "string" then
+		cache_element.keywords = { keywords }
+	end
 	if M.substitutions then
 		local substituted_keywords = {}
 		for _, keyword in ipairs(cache_element.keywords) do
-			table.insert(substituted_keywords, M.substitutions[keyword] or keyword)
+      local kwd = M.substitutions[keyword]
+      if kwd then table.insert(substituted_keywords,kwd) else table.insert(substituted_keywords,keyword)
 		end
 		cache_element.keywords = substituted_keywords
 	end
