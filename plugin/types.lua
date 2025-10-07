@@ -1,3 +1,6 @@
+---@class Substitute
+---@type table<string, string>
+
 ---@alias dev_opts {keywords?: string[], auto?: boolean, ignore_branch?: string|string[], fetch_branch?: boolean }
 ---@alias behavior
 ---| 'error' # Raises an error if a kye exists in multiple tables
@@ -13,6 +16,7 @@
 ---@field auto boolean|nil
 ---@field ignore_branch string|string[]|nil
 ---@field branch string|nil
+---@field file string|nil
 
 ---@class Cache
 ---@type table<string, CacheElement>
