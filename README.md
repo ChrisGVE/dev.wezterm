@@ -103,6 +103,26 @@ return M
 
 In this case, the initialization of the plugin only returns a hashkey unique to your plugin that you must store. Later, depending on your needs, you can get your plugin path or set the require path by using your unique hashkey.
 
+## Hosted local repository
+
+If you need to host your plugin on a local repository, requiring your plugins in the format `wezterm.plugin.require("file:///...)` will no longer work. Since you are not cloning your plugins directly from Github.com the typical keywords to search plugins won't work for you, i.e. "https", "plugin author". Here is a solution, in your wezterm.lua:
+
+```lua
+local dev = wezterm.plugin.require("file:///location of your plugins/folder/dev.wezterm")
+
+local subst = {
+  https = "file",
+  chrisgve = "folder",
+  -- other plugin authors = "folder"
+}
+
+dev.set_substitutions(subst)
+
+-- require other plugins
+```
+
+The
+
 ## Why should I use it?
 
 If your plugin is self-contained in a single file, you should not have a need for `dev.wezterm` unless you need to access resources that you have stored in the root of your plugin repository.
