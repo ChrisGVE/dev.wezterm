@@ -216,9 +216,9 @@ function M.setup(opts)
 	return _setup(opts)
 end
 
----@param substitute_string substitute[]
-function M.set_substitutions(substitute_string)
-	M.substitutions = substitute_string
+---@param substitute_dict Substitute
+function M.set_substitutions(substitute_dict)
+	M.substitutions = substitute_dict
 	if not M.utils then
 		local require_path = search_path(dev_cache_element)
 		_set_wezterm_require_path(require_path)
