@@ -25,7 +25,7 @@ local default_element = {
 }
 
 ---@type CacheElement
-local dev_cache_element = {
+M.dev_cache_element = {
 	keywords = { "https", "chrisgve", "dev", "wezterm" },
 	fetch_branch = true,
 	ignore_branch = { "main" },
@@ -80,18 +80,6 @@ local function search_path(cache_element)
 	local keywords = cache_element.keywords
 	if keywords and type(keywords) == "string" then
 		cache_element.keywords = { keywords }
-	end
-	if M.substitutions then
-		local substituted_keywords = {}
-		for _, keyword in ipairs(cache_element.keywords) do
-			local kwd = M.substitutions[keyword]
-			if kwd then
-				table.insert(substituted_keywords, kwd)
-			else
-				table.insert(substituted_keywords, keyword)
-			end
-			cache_element.keywords = substituted_keywords
-		end
 	end
 	-- iterate through every installed plugin
 	for _, plugin in ipairs(wezterm.plugin.list()) do
@@ -199,6 +187,25 @@ function M.require(url, opts)
 	return plugin, _setup(opts)
 end
 
+---@param initial_list string[]
+---@return string[]
+local function subst(initial_list)
+	if M.substitutions then
+		local substituted_keywords = {}
+		for _, keyword in ipairs(initial_list) do
+			local kwd = M.substitutions[keyword]
+			if kwd then
+				table.insert(substituted_keywords, kwd)
+			else
+				table.insert(substituted_keywords, keyword)
+			end
+		end
+		return substituted_keywords
+	else
+		return initial_list
+	end
+end
+
 ---@param opts dev_opts
 ---@return string|nil hashkey
 ---@return string|nil plugin_path
@@ -211,6 +218,8 @@ function M.setup(opts)
 		return handle_error("no_keywords", "No keywords provided", false)
 	end
 
+	opts.keywords = subst(opts.keywords)
+
 	opts = utils.tbl_deep_extend("force", default_element, opts or {})
 
 	return _setup(opts)
@@ -219,8 +228,9 @@ end
 ---@param substitute_dict Substitute
 function M.set_substitutions(substitute_dict)
 	M.substitutions = substitute_dict
+	M.dev_cache_element.keywords = subst(substitute_dict, M.dev_cache_element.keywords)
 	if not M.utils then
-		local require_path = search_path(dev_cache_element)
+		local require_path = search_path(M.dev_cache_element)
 		_set_wezterm_require_path(require_path)
 		M.bootstrap = false
 		utils = require("utils.utils")
@@ -229,7 +239,7 @@ function M.set_substitutions(substitute_dict)
 end
 
 local function init()
-	local require_path = search_path(dev_cache_element)
+	local require_path = search_path(M.dev_cache_element)
 	if require_path then
 		_set_wezterm_require_path(require_path)
 		M.bootstrap = false
