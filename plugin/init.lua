@@ -223,9 +223,9 @@ function M.setup(opts)
 	end
 
 	if M.substitutions then
-		handle_error("INFO", "Keywords before substitution: " .. table.concat(opts.keywords, ", "), true)
+		handle_error("INFO", "Keywords before substitution: " .. table.concat(opts.keywords, ", "), false)
 		opts.keywords = subst(opts.keywords)
-		handle_error("INFO", "Keywords after substitution: " .. table.concat(opts.keywords, ", "), true)
+		handle_error("INFO", "Keywords after substitution: " .. table.concat(opts.keywords, ", "), false)
 	end
 
 	opts = utils.tbl_deep_extend("force", default_element, opts or {})
@@ -240,7 +240,7 @@ function M.set_substitutions(substitute_dict)
 	if not M.utils then
 		local require_path = search_path(M.dev_cache_element)
 		if require_path then
-			handle_error("INFO", "set_substitutions: dev.wezterm path found", true)
+			handle_error("INFO", "set_substitutions: dev.wezterm path found", false)
 		end
 		_set_wezterm_require_path(require_path)
 		M.bootstrap = false
@@ -252,13 +252,13 @@ end
 local function init()
 	local require_path = search_path(M.dev_cache_element, true) -- the first search for dev.wezterm is silent
 	if require_path then
-		handle_error("INFO", "init: dev.wezterm plugin path found", true)
+		handle_error("INFO", "init: dev.wezterm plugin path found", false)
 		_set_wezterm_require_path(require_path)
 		M.bootstrap = false
 		utils = require("utils.utils")
 		M.utils = true
 	else
-		handle_error("WARN", "init: dev.wezterm plugin path not found", true)
+		handle_error("WARN", "init: dev.wezterm plugin path not found", false)
 	end
 end
 
