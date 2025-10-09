@@ -228,7 +228,7 @@ end
 ---@param substitute_dict Substitute
 function M.set_substitutions(substitute_dict)
 	M.substitutions = substitute_dict
-	M.dev_cache_element.keywords = subst(substitute_dict, M.dev_cache_element.keywords)
+	M.dev_cache_element.keywords = subst(M.dev_cache_element.keywords)
 	if not M.utils then
 		local require_path = search_path(M.dev_cache_element)
 		_set_wezterm_require_path(require_path)
