@@ -47,10 +47,9 @@ local module2
 ...
 
 function M.init()
-  local opts = { auto = true }
-  local plugin_dir
+  local opts = { keywords = { "https", "git-user", "your_plugin" }, auto = true }
 
-  plugin_dir = dev.setup(opts)
+  local plugin_dir = dev.setup(opts)
 
   module1 = require("module1")
   module2 = require("module2")
@@ -105,7 +104,7 @@ In this case, the initialization of the plugin only returns a hashkey unique to 
 
 ## Hosted local repository
 
-If you need to host your plugin on a local repository, requiring your plugins in the format `wezterm.plugin.require("file:///...)` will no longer work. Since you are not cloning your plugins directly from Github.com the typical keywords to search plugins won't work for you, i.e. "https", "plugin author". Here is a solution, in your wezterm.lua:
+If you need to host your plugin on a local repository, requiring your plugins in the format `wezterm.plugin.require("file:///...)` will no longer work. Since you are not cloning your plugins directly from Github.com the typical keywords to search plugins won't work for you, i.e. "https", "plugin author" don't appear in the required path. Here is a solution, in your `wezterm.lua`:
 
 ```lua
 local dev = wezterm.plugin.require("file:///location of your plugins/folder/dev.wezterm")
@@ -121,7 +120,10 @@ dev.set_substitutions(subst)
 -- require other plugins
 ```
 
-The
+Since plugin are cached and loaded only once, this snippet will load `dev.wezterm` first, and will allow you to provide a substitution dictionary that will be used to:
+
+- finalize the setup of `dev.wezterm` since it is also located in a different location than expected
+- force `dev.wezterm` to substitute keywords provided by other plugin authors such that you can require them despite the change of expected location.
 
 ## Why should I use it?
 
