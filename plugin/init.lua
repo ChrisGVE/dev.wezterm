@@ -39,8 +39,12 @@ M.cache = {}
 ---@param message string
 ---@param should_throw boolean
 local function handle_error(error_type, message, should_throw)
-	if error_type == "WARN" or error_type == "INFO" or error_type == "ERROR" then
-		wezterm.log_error("dev.wezterm: " .. error_type .. ">" .. message)
+	if error_type == "INFO" then
+		wezterm.log_info("dev.wezterm: " .. message)
+	elseif error_type == "WARN" or error_type == "WARNING" then
+		wezterm.log_warn("dev.wezterm: " .. message)
+	elseif error_type == "ERROR" then
+		wezterm.log_error("dev.wezterm: " .. message)
 	else
 		wezterm.log_error("dev.wezterm: " .. message)
 		wezterm.emit("dev.wezterm." .. error_type, message)
