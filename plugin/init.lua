@@ -74,9 +74,10 @@ local function get_cache_element_from_hash(hashkey)
 end
 
 ---@param cache_element CacheElement
+---@param silent? bool
 ---@return string|nil plugin_path
 ---@return string|nil require_path
-local function search_path(cache_element)
+local function search_path(cache_element, silent)
 	local keywords = cache_element.keywords
 	if keywords and type(keywords) == "string" then
 		cache_element.keywords = { keywords }
@@ -95,6 +96,7 @@ local function search_path(cache_element)
 		if found then
 			cache_element.plugin_path = plugin.plugin_dir
 			cache_element.require_path = plugin.plugin_dir .. separator .. "plugin" .. separator .. "?.lua"
+			cache_element.error = false
 			if M.bootstrap then
 				return cache_element.require_path
 			elseif cache_element.auto then
@@ -104,7 +106,9 @@ local function search_path(cache_element)
 			end
 		end
 	end
-	handle_error("plugin_not_found", "Could not find plugin directory", false)
+	if not silent then
+		handle_error("plugin_not_found", "Could not find plugin directory", false)
+	end
 	if cache_element then
 		cache_element.error = true
 	end
@@ -239,7 +243,7 @@ function M.set_substitutions(substitute_dict)
 end
 
 local function init()
-	local require_path = search_path(M.dev_cache_element)
+	local require_path = search_path(M.dev_cache_element, true) -- the first search for dev.wezterm is silent
 	if require_path then
 		_set_wezterm_require_path(require_path)
 		M.bootstrap = false
