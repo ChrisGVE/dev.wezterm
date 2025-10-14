@@ -26,7 +26,7 @@ local default_element = {
 
 ---@type CacheElement
 M.dev_cache_element = {
-	keywords = { "https", "chrisgve", "dev", "wezterm" },
+	keywords = { "github", "chrisgve", "dev", "wezterm" },
 	fetch_branch = true,
 	ignore_branch = { "main" },
 }

@@ -110,7 +110,7 @@ If you need to host your plugin on a local repository, requiring your plugins in
 local dev = wezterm.plugin.require("file:///location of your plugins/folder/dev.wezterm")
 
 local subst = {
-  https = "file",
+  github = "file",
   chrisgve = "folder",
   -- other plugin authors = "folder"
 }
