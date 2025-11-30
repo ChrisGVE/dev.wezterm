@@ -210,8 +210,9 @@ local function subst(initial_list)
 			local kwd = M.substitutions[keyword]
 			if kwd then
 				table.insert(substituted_keywords, kwd)
-			else
+			elseif kwd ~= "" then
 				table.insert(substituted_keywords, keyword)
+				-- In case the keyword is empty, it is dropped from the modified list
 			end
 		end
 		return substituted_keywords
