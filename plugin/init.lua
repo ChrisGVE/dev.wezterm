@@ -26,7 +26,7 @@ local default_element = {
 
 ---@type CacheElement
 M.dev_cache_element = {
-	keywords = { "github", "chrisgve", "dev", "wezterm" },
+	keywords = { "https", "chrisgve", "dev", "wezterm" },
 	fetch_branch = true,
 	ignore_branch = { "main" },
 }
@@ -146,7 +146,9 @@ end
 
 -- Set the wezterm require path for the plugin
 local function _set_wezterm_require_path(path)
-	package.path = package.path .. ";" .. path
+	if path ~= nil then
+		package.path = package.path .. ";" .. path
+	end
 end
 
 -- Set the wezterm require path for the plugin
