@@ -36,19 +36,37 @@ M.cache = {}
 
 -- Centralized error handler for consistent error management
 ---@param error_type string
----@param message string
+---@param message string|nil
+---@param table table|nil
 ---@param should_throw boolean
-local function handle_error(error_type, message, should_throw)
+local function handle_error(error_type, message, table, should_throw)
+	local logging
+	local emit = false
+
 	if error_type == "INFO" then
-		wezterm.log_info("dev.wezterm: " .. message)
-	elseif error_type == "WARN" or error_type == "WARNING" then
-		wezterm.log_warn("dev.wezterm: " .. message)
+		logging = wezterm.log_info
+	elseif error_type == "WARN" then
+		logging = wezterm.log_warn
 	elseif error_type == "ERROR" then
-		wezterm.log_error("dev.wezterm: " .. message)
+		logging = wezterm.log_error
 	else
-		wezterm.log_error("dev.wezterm: " .. message)
+		logging = wezterm.log_error
+		emit = true
+	end
+
+	if message and table then
+		logging("dev.wezterm: " .. message)
+		logging(table)
+	elseif message then
+		logging("dev.wezterm: " .. message)
+	else
+		logging("dev.wezterm")
+		logging(table)
+	end
+	if emit and message then
 		wezterm.emit("dev.wezterm." .. error_type, message)
 	end
+
 	if should_throw then
 		error(message)
 	end
@@ -77,7 +95,7 @@ local function get_cache_element_from_hash(hashkey)
 	if hashkey and M.cache[hashkey] then
 		return M.cache[hashkey]
 	else
-		return handle_error("invalid_hashkey", "Invalid hashkey: " .. (hashkey or "nil"), false)
+		return handle_error("invalid_hashkey", "Invalid hashkey: " .. (hashkey or "nil"), nil, false)
 	end
 end
 
@@ -115,7 +133,7 @@ local function search_path(cache_element, silent)
 		end
 	end
 	if not silent then
-		handle_error("plugin_not_found", "Could not find plugin directory", false)
+		handle_error("plugin_not_found", "Could not find plugin directory", nil, false)
 	end
 	if cache_element then
 		cache_element.error = true
@@ -159,7 +177,7 @@ function M.set_wezterm_require_path(hashkey)
 		_set_wezterm_require_path(cache_element.require_path)
 		return
 	else
-		handle_error("require_path_not_set", "Invalid path", false)
+		handle_error("require_path_not_set", "Invalid path", nil, false)
 	end
 end
 
@@ -226,17 +244,17 @@ end
 ---@return string|nil plugin_path
 function M.setup(opts)
 	if not opts then
-		return handle_error("invalid_opts", "Options table is required", false)
+		return handle_error("invalid_opts", "Options table is required", nil, false)
 	end
 
 	if not opts.keywords or (type(opts.keywords) == "table" and #opts.keywords == 0) then
-		return handle_error("no_keywords", "No keywords provided", false)
+		return handle_error("no_keywords", "No keywords provided", nil, false)
 	end
 
 	if M.substitutions then
-		handle_error("INFO", "Keywords before substitution: " .. table.concat(opts.keywords, ", "), false)
+		handle_error("INFO", "Keywords before substitution: ", opts.keywords, false)
 		opts.keywords = subst(opts.keywords)
-		handle_error("INFO", "Keywords after substitution: " .. table.concat(opts.keywords, ", "), false)
+		handle_error("INFO", "Keywords after substitution: ", opts.keywords, false)
 	end
 
 	opts = utils.tbl_deep_extend("force", default_element, opts or {})
@@ -251,7 +269,7 @@ function M.set_substitutions(substitute_dict)
 	if not M.utils then
 		local require_path = search_path(M.dev_cache_element)
 		if require_path then
-			handle_error("INFO", "set_substitutions: dev.wezterm path found", false)
+			handle_error("INFO", "set_substitutions: dev.wezterm path found", nil, false)
 		end
 		_set_wezterm_require_path(require_path)
 		M.bootstrap = false
@@ -263,13 +281,13 @@ end
 local function init()
 	local require_path = search_path(M.dev_cache_element, true) -- the first search for dev.wezterm is silent
 	if require_path then
-		handle_error("INFO", "init: dev.wezterm plugin path found", false)
+		handle_error("INFO", "init: dev.wezterm plugin path found", nil, false)
 		_set_wezterm_require_path(require_path)
 		M.bootstrap = false
 		utils = require("utils.utils")
 		M.utils = true
 	else
-		handle_error("WARN", "init: dev.wezterm plugin path not found", false)
+		handle_error("WARN", "init: dev.wezterm plugin path not found", nil, false)
 	end
 end
 
