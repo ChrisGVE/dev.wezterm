@@ -72,6 +72,20 @@ local function handle_error(error_type, message, table, should_throw)
 	end
 end
 
+---@param list string[]
+---@return string[]
+local function unique_strings(list)
+	local seen = {}
+	local out = {}
+	for _, v in ipairs(list) do
+		if not seen[v] then
+			seen[v] = true
+			out[#out + 1] = v
+		end
+	end
+	return out
+end
+
 -- check if `str` is included in `array`
 ---@param str string
 ---@param array string|string[]
@@ -233,9 +247,9 @@ local function subst(initial_list)
 				-- In case the keyword is empty, it is dropped from the modified list
 			end
 		end
-		return substituted_keywords
+		return unique_strings(substituted_keywords)
 	else
-		return initial_list
+		return unique_strings(initial_list)
 	end
 end
 
@@ -269,7 +283,7 @@ function M.set_substitutions(substitute_dict)
 	if not M.utils then
 		local require_path = search_path(M.dev_cache_element)
 		if require_path then
-			handle_error("INFO", "set_substitutions: dev.wezterm path found", nil, false)
+			handle_error("INFO", "set_substitutions: dev.wezterm path found", M.dev_cache_element.keywords, false)
 		end
 		_set_wezterm_require_path(require_path)
 		M.bootstrap = false
@@ -279,7 +293,7 @@ function M.set_substitutions(substitute_dict)
 end
 
 local function init()
-	local require_path = search_path(M.dev_cache_element, true) -- the first search for dev.wezterm is silent
+	local require_path = search_path(M.dev_cache_element, true) -- The first search for dev.wezterm is silent
 	if require_path then
 		handle_error("INFO", "init: dev.wezterm plugin path found", nil, false)
 		_set_wezterm_require_path(require_path)
@@ -287,7 +301,7 @@ local function init()
 		utils = require("utils.utils")
 		M.utils = true
 	else
-		handle_error("WARN", "init: dev.wezterm plugin path not found", nil, false)
+		handle_error("WARN", "init: dev.wezterm plugin path not found", M.dev_cache_element.keywords, false)
 	end
 end
 
