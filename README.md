@@ -15,6 +15,8 @@ Simple wezterm plugin to determine a plugin location within a dev environment or
 
 ```lua
 local wezterm = require("wezterm")
+
+---@type Dev
 local dev = wezterm.plugin.require("https://github.com/chrisgve/dev.wezterm")
 ```
 
@@ -38,6 +40,7 @@ opts = {
 ```lua
 local M = {}
 
+---@type Dev
 local dev = wezterm.plugin.require("https://github.com/chrisgve/dev.wezterm")
 
 local module1
@@ -67,6 +70,7 @@ In this mode, you can do everything in one go. It will search for your plugin, u
 ```lua
 local M = {}
 
+---@type Dev
 local dev = wezterm.plugin.require("https://github.com/chrisgve/dev.wezterm")
 
 M.hashkey = nil
@@ -107,6 +111,7 @@ In this case, the initialization of the plugin only returns a hashkey unique to 
 If you need to host your plugin on a local repository, requiring your plugins in the format `wezterm.plugin.require("file:///...)` will no longer work. Since you are not cloning your plugins directly from Github.com the typical keywords to search plugins won't work for you, i.e. "https", "plugin author" don't appear in the required path. Here is a solution, in your `wezterm.lua`:
 
 ```lua
+---@type Dev
 local dev = wezterm.plugin.require("file:///location of your plugins/folder/dev.wezterm")
 
 local subst = {
@@ -162,6 +167,10 @@ wezterm.on("dev.wezterm.plugin_not_found", function()
   wezterm.log_warn("Could not find the plugin. Make sure it's installed correctly.")
 end)
 ```
+
+## Type annotations
+
+Thanks to [DrKJeff16](https://github.com/DrKJeff16/wezterm-types) for building annotations for this plugin.
 
 ## Contributions
 

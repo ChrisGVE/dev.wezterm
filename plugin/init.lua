@@ -114,7 +114,7 @@ local function get_cache_element_from_hash(hashkey)
 end
 
 ---@param cache_element CacheElement
----@param silent? bool
+---@param silent? boolean
 ---@return string|nil plugin_path
 ---@return string|nil require_path
 local function search_path(cache_element, silent)
